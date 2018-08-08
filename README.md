@@ -6,15 +6,14 @@ python setup.py install
 
 ## Basic Usage ##
     import tail
-    
-    # Create a tail instance
-    t = tail.Tail('file-to-be-followed')
 
-    # Register a callback function to be called when a new line is found in the followed file. 
-    # If no callback function is registerd, new lines would be printed to standard out.
-    t.register_callback(callback_function)
+    # Create a tail instance:
+    t = tail.Tail('file-to-be-followed', callback=print, sleep=1)
+    # (Optionally you can register a callback function and set the sleep time.)
 
-    # Follow the file with 5 seconds as sleep time between iterations. 
-    # If sleep time is not provided 1 second is used as the default time.
-    t.follow(s=5)
-     
+    # Start tailing:
+    t.start()
+
+    # Wait for an ENTER, and stop trailing:
+    input()
+    t.stop()
