@@ -1,69 +1,70 @@
 #!/usr/bin/env python
 
 '''
-Python-Tail - Unix tail follow implementation in Python. 
+Python-Tail - Unix tail follow implementation in Python.
 
 python-tail can be used to monitor changes to a file.
 
 Example:
     import tail
 
-    # Create a tail instance
-    t = tail.Tail('file-to-be-followed')
+    # Create a tail instance:
+    t = tail.Tail('file-to-be-followed', callback=print, sleep=1)
+    # Optionally you can register a callback function and set the sleep time.
 
-    # Register a callback function to be called when a new line is found in the followed file. 
-    # If no callback function is registerd, new lines would be printed to standard out.
-    t.register_callback(callback_function)
+    # Start tailing:
+    t.start()
 
-    # Follow the file with 5 seconds as sleep time between iterations. 
-    # If sleep time is not provided 1 second is used as the default time.
-    t.follow(s=5) '''
+    # Wait for a key press, and stop trailing:
+    input()
+    t.stop() '''
 
-# Author - Kasun Herath <kasunh01 at gmail.com>
-# Source - https://github.com/kasun/python-tail
+# Authors - Kasun Herath <kasunh01 at gmail.com>, Tero Niemi <talamus at gmail.com>
+# Source - https://github.com/talamus/python-tail
 
 import os
 import sys
 import time
+from threading import Thread
 
-class Tail(object):
+class Tail(Thread):
     ''' Represents a tail command. '''
-    def __init__(self, tailed_file):
+    def __init__(self, tailed_file, callback=print, sleep=1):
         ''' Initiate a Tail instance.
             Check for file validity, assigns callback function to standard out.
-            
+
             Arguments:
-                tailed_file - File to be followed. '''
+                tailed_file - File to be followed.
+                callback - alternative callback function. (Default: print)
+                sleep - time between re-checks. (Default: 1) '''
 
         self.check_file_validity(tailed_file)
         self.tailed_file = tailed_file
-        self.callback = sys.stdout.write
+        self.callback = callback
+        self.sleep = sleep
+        self.is_active = True
+        Thread.__init__(self)
 
-    def follow(self, s=1):
-        ''' Do a tail follow. If a callback function is registered it is called with every new line. 
-        Else printed to standard out.
-    
-        Arguments:
-            s - Number of seconds to wait between each iteration; Defaults to 1. '''
-
+    def run(self):
+        ''' Do a tail follow. For every new line a callback is called. '''
         with open(self.tailed_file) as file_:
             # Go to the end of file
             file_.seek(0,2)
-            while True:
+            while self.is_active:
                 curr_position = file_.tell()
                 line = file_.readline()
                 if not line:
                     file_.seek(curr_position)
-                    time.sleep(s)
+                    time.sleep(self.sleep)
                 else:
-                    self.callback(line)
+                    self.callback(line.rstrip())
 
-    def register_callback(self, func):
-        ''' Overrides default callback function to provided function. '''
-        self.callback = func
+    def stop(self):
+        ''' Stop the tailing. '''
+        self.is_active = False
 
     def check_file_validity(self, file_):
-        ''' Check whether the a given file exists, readable and is a file '''
+        ''' Check whether the a given file exists, is readable and is a file. '''
         if not os.access(file_, os.F_OK):
             raise TailError("File '%s' does not exist" % (file_))
         if not os.access(file_, os.R_OK):
