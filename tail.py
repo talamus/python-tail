@@ -1,24 +1,25 @@
 #!/usr/bin/env python
 
 '''
-Python-Tail - Unix tail follow implementation in Python.
-
-python-tail can be used to monitor changes to a file.
+Python-Tail - An UNIX-like asyncronous tailing with glob pattern matching.
 
 Example:
     import tail
 
+    # A callback function for each row:
+    def do_something(row, filename):
+        print(filename, ':', row)
+
     # Create a tail instance:
-    t = tail.Tail('logs/*.txt', callback=print, sleep=1)
-    # Optionally you can register a callback function and set the sleep time.
+    t = tail.Tail('logs/*.txt', callback=do_something, sleep=1)
 
     # Start tailing:
     t.start()
 
-    # Wait for a key press, and stop tailing:
+    # Wait for an ENTER, and stop trailing:
     input()
-    t.stop() '''
-
+    t.stop()
+'''
 # Authors - Kasun Herath <kasunh01 at gmail.com>, Tero Niemi <talamus at gmail.com>
 # Source - https://github.com/talamus/python-tail
 
@@ -56,7 +57,6 @@ class Tail(Thread):
         # Seek existing files and go to the end of the file
         filenames = glob.glob(self.glob_to_be_tailed)
         for filename in filenames:
-            print(filename, os.path.getsize(filename))
             self.positions[filename] = os.path.getsize(filename)
 
         # get a list of matching filenames, and for each try to seek new lines
